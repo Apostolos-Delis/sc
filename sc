@@ -35,11 +35,10 @@ class Shortcut:
 
     def print_instances(self):
         for instance, args in self.instances.items():
-            print("  {:<20} {:<15} ".format(instance, args['description']))
-            # print(instance, args['description'])
+            print("  {:<20} {:<15}".format(instance, args['description']))
 
     def print_help(self):
-        print("Shortcut: sc f{self.name}")
+        print(f"sc {self.name}")
         print(self.description, end='\n\n')
         print("command to be run: ")
         print(self.command, end='\n\n')
@@ -52,7 +51,7 @@ class Shortcut:
         instance arguments, if the
         """
         if instance not in self.instances:
-            raise ValueError("Error: such instance: {instance}")
+            raise ValueError(f"Error: no such instance: '{instance}'")
         instance = deepcopy(self.instances[instance])
         if "REST" in instance['args']:
             instance['args']["REST"].extend(args)
@@ -151,9 +150,13 @@ def process_base_args(args):
     """ Process all flags for just sc itself """
     if args.version:
         print(f'sc {__VERSION__}')
-    elif args.list:
-        for shortcuts in list_shortcuts():
-            print(shortcuts)
+
+    elif args.list and list_shortcuts():
+        # This adds an underline to the text
+        print("\033[4;49;39m{:<8} {:<15}\033[0m".format('Index', 'Shortcut'))
+        for index, shortcut in enumerate(list_shortcuts()):
+            print("{:<8} {:<15}".format(index, shortcut))
+
     # Open the file up with a text editor if it exists
     elif args.edit:
         if args.edit in list_shortcuts():
@@ -251,8 +254,8 @@ List of subcommands: add, delete, or a directory entry to cd to"""
     instance = sys.argv[2]
     try:
         command = shortcut.format_command(instance, sys.argv[3:])
-    except ValueError as e:
-        print(e, file=sys.stderr)
+    except ValueError as error:
+        print(error, file=sys.stderr)
         sys.exit(1)
     os.system(command)
 
