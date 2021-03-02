@@ -5,6 +5,7 @@ import argparse
 import os
 import sys
 from copy import deepcopy
+from shortcut import utils
 
 import yaml
 
@@ -16,7 +17,7 @@ SC_DIR = os.path.join(HOME, '.shortcut')
 INSTANCE_DIR = os.path.join(SC_DIR, 'instances')
 TEMPLATE_FILE = os.path.join(SC_DIR, 'template.yaml')
 
-__VERSION__ = 'v0.1.0'
+__VERSION__ = '0.1.2'
 
 
 class ArgumentError(Exception):
@@ -149,7 +150,7 @@ def list_shortcuts():
 def process_base_args(args):
     """ Process all flags for just sc itself """
     if args.version:
-        print(f'sc {__VERSION__}')
+        print(f'sc v{__VERSION__}')
 
     elif args.list and list_shortcuts():
         # This adds an underline to the text

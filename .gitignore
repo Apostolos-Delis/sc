@@ -32,6 +32,10 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
+
+# Packaging
+shortcut.egg-info/
+
 # pyenv
 .python-version
 
