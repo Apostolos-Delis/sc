@@ -34,7 +34,7 @@ coverage.xml
 
 
 # Packaging
-shortcut.egg-info/
+*.egg-info/
 
 # pyenv
 .python-version
@@ -54,3 +54,4 @@ tmp/
 # vim stuff
 *.swp
 **/*.swp
+tags

@@ -5,19 +5,18 @@ import argparse
 import os
 import sys
 from copy import deepcopy
-from shortcut import utils
 
 import yaml
+from shortcut import utils
 
+USERNAME = os.getenv("USER")
+HOME = os.path.expanduser(f"~{USERNAME}")
 
-USERNAME = os.getenv('USER')
-HOME = os.path.expanduser(f'~{USERNAME}')
+SC_DIR = os.path.join(HOME, ".shortcut")
+INSTANCE_DIR = os.path.join(SC_DIR, "instances")
+TEMPLATE_FILE = os.path.join(SC_DIR, "template.yaml")
 
-SC_DIR = os.path.join(HOME, '.shortcut')
-INSTANCE_DIR = os.path.join(SC_DIR, 'instances')
-TEMPLATE_FILE = os.path.join(SC_DIR, 'template.yaml')
-
-__VERSION__ = '0.1.2'
+__VERSION__ = "0.1.2"
 
 
 class ArgumentError(Exception):
@@ -28,21 +27,22 @@ class Shortcut:
     """
     Class defining
     """
+
     def __init__(self, shortcut, yaml_config):
         self.name = shortcut
-        self.description = yaml_config['description']
-        self.instances = yaml_config['instances']
-        self.command = yaml_config['command']
+        self.description = yaml_config["description"]
+        self.instances = yaml_config["instances"]
+        self.command = yaml_config["command"]
 
     def print_instances(self):
         for instance, args in self.instances.items():
-            print("  {:<20} {:<15}".format(instance, args['description']))
+            print("  {:<20} {:<15}".format(instance, args["description"]))
 
     def print_help(self):
         print(f"sc {self.name}")
-        print(self.description, end='\n\n')
+        print(self.description, end="\n\n")
         print("command to be run: ")
-        print(self.command, end='\n\n')
+        print(self.command, end="\n\n")
         print(f"{self.name} instances:")
         self.print_instances()
 
@@ -54,15 +54,15 @@ class Shortcut:
         if instance not in self.instances:
             raise ValueError(f"Error: no such instance: '{instance}'")
         instance = deepcopy(self.instances[instance])
-        if "REST" in instance['args']:
-            instance['args']["REST"].extend(args)
+        if "REST" in instance["args"]:
+            instance["args"]["REST"].extend(args)
         else:
-            instance['args']["REST"] = args
+            instance["args"]["REST"] = args
 
         # Reformat "REST" to be string split by spaces rather than a list
         # since we want a cli command with 'a b c' not ['a', 'b', ... ]
-        instance['args']["REST"] = ' '.join(instance['args']["REST"])
-        return self.command.format(**instance['args'])
+        instance["args"]["REST"] = " ".join(instance["args"]["REST"])
+        return self.command.format(**instance["args"])
 
 
 def make_directory(file_path: str):
@@ -73,11 +73,14 @@ def make_directory(file_path: str):
     try:
         os.makedirs(file_path, exist_ok=True)
     except OSError as exc:
+        import errno
+
         if exc.errno == errno.EEXIST and os.path.isdir(file_path):
             pass
         else:
-            print("Error while attempting to create directory: {file_path}")
-            exit(3)
+            print("Error while attempting to create directory: {file_path}",
+                  sys.stderr)
+            sys.exit(1)
 
 
 def initialize():
@@ -86,8 +89,9 @@ def initialize():
     make_directory(INSTANCE_DIR)
     if os.path.exists(TEMPLATE_FILE):
         return
-    with open(TEMPLATE_FILE, 'w+') as file:
-        file.write("""# Define the name of your shortcut here
+    with open(TEMPLATE_FILE, "w+") as file:
+        file.write(
+            """# Define the name of your shortcut here
 name: template
 
 # Brief description of what the command does
@@ -130,7 +134,8 @@ instances:
     args:
       arg1: arg1
       arg2: arg2
-      arg3: arg3 """)
+      arg3: arg3 """
+        )
 
 
 def list_shortcuts():
@@ -142,7 +147,7 @@ def list_shortcuts():
         return os.path.splitext(basename)[0]
 
     for file in os.listdir(INSTANCE_DIR):
-        if not file.endswith('.yaml'):
+        if not file.endswith(".yaml"):
             continue
         yield get_file_name(file)
 
@@ -150,26 +155,26 @@ def list_shortcuts():
 def process_base_args(args):
     """ Process all flags for just sc itself """
     if args.version:
-        print(f'sc v{__VERSION__}')
+        print(f"sc v{__VERSION__}")
 
-    elif args.list and list_shortcuts():
+    elif args.list and list(list_shortcuts()):
         # This adds an underline to the text
-        print("\033[4;49;39m{:<8} {:<15}\033[0m".format('Index', 'Shortcut'))
+        print("\033[4;49;39m{:<8} {:<15}\033[0m".format("Index", "Shortcut"))
         for index, shortcut in enumerate(list_shortcuts()):
             print("{:<8} {:<15}".format(index, shortcut))
 
     # Open the file up with a text editor if it exists
     elif args.edit:
         if args.edit in list_shortcuts():
-            yaml_file = os.path.join(INSTANCE_DIR, f'{args.edit}.yaml')
-            os.system(f'$EDITOR {yaml_file}')
+            yaml_file = os.path.join(INSTANCE_DIR, f"{args.edit}.yaml")
+            os.system(f"$EDITOR {yaml_file}")
         else:
             print(f'Error: "{args.edit}" is not a valid shortcut',
                   file=sys.stderr)
     # Delete a yaml file if it exists
     elif args.delete:
         if args.delete in list_shortcuts():
-            yaml_file = os.path.join(INSTANCE_DIR, f'{args.delete}.yaml')
+            yaml_file = os.path.join(INSTANCE_DIR, f"{args.delete}.yaml")
             os.remove(yaml_file)
         else:
             print(f'Error: "{args.delete}" is not a valid shortcut',
@@ -177,17 +182,16 @@ def process_base_args(args):
     # Create a new shortcut file if it exists
     elif args.add:
         if args.add in list_shortcuts():
-            print(f'Error: "{args.add}" already exists',
-                  file=sys.stderr)
+            print(f'Error: "{args.add}" already exists', file=sys.stderr)
         else:
-            yaml_file = os.path.join(INSTANCE_DIR, f'{args.add}.yaml')
-            os.system(f'cp {TEMPLATE_FILE} {yaml_file}')
+            yaml_file = os.path.join(INSTANCE_DIR, f"{args.add}.yaml")
+            os.system(f"cp {TEMPLATE_FILE} {yaml_file}")
 
 
 def load_shortcut(shortcut):
     """ Parses config file of a shortcut """
-    yaml_file = os.path.join(INSTANCE_DIR, f'{shortcut}.yaml')
-    with open(yaml_file, 'r') as file:
+    yaml_file = os.path.join(INSTANCE_DIR, f"{shortcut}.yaml")
+    with open(yaml_file, "r") as file:
         config = yaml.safe_load(file.read())
     return Shortcut(shortcut, config)
 
@@ -196,30 +200,56 @@ def main():
     """ Main function for shortcut """
     initialize()
 
-    desc = f'shortcut [sc] {__VERSION__}'
+    desc = f"shortcut [sc] {__VERSION__}"
     usage_msg = """sc [shortcut] [options] [instance] [options]
 Allows you to define shortcuts for various commands using yaml files"""
 
-    subcommand_help = """
-List of subcommands: add, delete, or a directory entry to cd to"""
     parser = argparse.ArgumentParser(description=desc, usage=usage_msg)
 
-    parser.add_argument('--version', action='version', default=False,
-                        help='Displays the current version of sc',
-                        version=__VERSION__)
-    parser.add_argument("-l", "--list", action="store_true", default=False,
-                        help="Displays all current shortcuts",
-                        dest="list")
-    parser.add_argument('-a', "--add", action="store", default=None,
-                        dest='add', help='Creates a new shortcut')
-    parser.add_argument('-e', "--edit", action="store", default=None,
-                        dest='edit', help='Edits the yml config of a shortcut')
-    parser.add_argument('-d', "--delete", action="store", default=None,
-                        dest='delete', help='Deletes a shortcut')
+    parser.add_argument(
+        "--version",
+        action="version",
+        default=False,
+        help="Displays the current version of sc",
+        version=__VERSION__,
+    )
+    parser.add_argument(
+        "-l",
+        "--list",
+        action="store_true",
+        default=False,
+        help="Displays all current shortcuts",
+        dest="list",
+    )
+    parser.add_argument(
+        "-a",
+        "--add",
+        action="store",
+        default=None,
+        dest="add",
+        help="Creates a new shortcut",
+    )
+    parser.add_argument(
+        "-e",
+        "--edit",
+        action="store",
+        default=None,
+        dest="edit",
+        help="Edits the yml config of a shortcut",
+    )
+    parser.add_argument(
+        "-d",
+        "--delete",
+        action="store",
+        default=None,
+        dest="delete",
+        help="Deletes a shortcut",
+    )
 
     def override_error_function(error):
         """ Function to replace the default parser error function """
         raise ArgumentError(error)
+
     parser.error = override_error_function
 
     if len(sys.argv) == 1:
@@ -231,10 +261,10 @@ List of subcommands: add, delete, or a directory entry to cd to"""
     except ArgumentError as e:
         # Check to see if it is a flag, if it is, then its not an instance,
         # and is therefor an invalid argument
-        if sys.argv[1].startswith('-'):
+        if sys.argv[1].startswith("-"):
             print(e, file=sys.stderr)
             sys.exit(1)
-        elif len(sys.argv) > 2 and sys.argv[2].startswith('-'):
+        elif len(sys.argv) > 2 and sys.argv[2].startswith("-"):
             print(e, file=sys.stderr)
             sys.exit(1)
     else:
