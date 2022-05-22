@@ -7,7 +7,7 @@ import sys
 from copy import deepcopy
 
 import yaml
-from shortcut import utils
+from shorts import utils
 
 USERNAME = os.getenv("USER")
 HOME = os.path.expanduser(f"~{USERNAME}")
